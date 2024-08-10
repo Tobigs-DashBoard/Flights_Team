@@ -1,7 +1,8 @@
 import json
 import time
 import urllib.parse
-from datetime import datetime, timezone
+import os
+from datetime import datetime, timezone, date, timedelta
 from api_params import *
 from multiprocessing import Process, Queue
 
@@ -9,7 +10,17 @@ from multiprocessing import Process, Queue
 with open('Naver_Flights/airport_region_map.json', 'r', encoding='utf-8') as f:
     airport_region_map=json.load(f)
 
-def save_flight_info(schedules, airline_map, airport_map, departure, arrival, queue):
+
+'''검색 용 공항 코드'''
+with open('Naver_Flights/naver_airports.json', 'r', encoding='utf-8') as f:
+    request_airport_map=json.load(f)
+
+def ensure_dir(file_path):
+    directory = os.path.dirname(file_path)
+    if not os.path.exists(directory):
+        os.makedirs(directory, exist_ok=True)
+
+def save_flight_info(schedules, airline_map, airport_map, departure, arrival, date, queue):
     '''비행 정보 저장'''
     # 비행 정보를 저장할 리스트
     all_flights = []
@@ -25,8 +36,12 @@ def save_flight_info(schedules, airline_map, airport_map, departure, arrival, qu
         }
 
         # 경유, 직항 모두 출발지와 도착지가 입력값과 다른 경우 스킵
-        if len(details) > 1:    
-            if details[0]['sa'] != departure and details[len(details)-1]['ea'] != arrival:
+        if len(details) > 1:
+            if departure == 'SEL': # 서울 -> 한국 전체 공항 ok
+                if details[0]['sa'] not in ["CJU","GMP","PUS","CJJ","KWJ","TAE","RSU","USN","HIN","KPO","WJU","KUV","MWX","ICN"] and details[len(details)-1]['ea'] != arrival:
+                    continue
+            
+            elif details[0]['sa'] != departure and details[len(details)-1]['ea'] != arrival:
                 continue
         else:
             if details[0]['sa'] != departure and details[0]['ea'] != arrival:
@@ -47,18 +62,21 @@ def save_flight_info(schedules, airline_map, airport_map, departure, arrival, qu
             
             flight_info = {
                 "air_id": air_id_list[index],  # 항공편 ID
-                "airline": airline_map.get(detail['av'], "Unknown"),  # 항공사
-                "depart_airport": depart_airport,
+                "airline": airline_map.get(detail['av']),  # 항공사
                 "depart_region": depart_region,
+                "depart_airport": depart_airport,
                 "arrival_region": arrival_region,
+                "arrival_airport": arrival_airport,
                 # "depart_date": f"{depart_date[:4]}-{depart_date[4:6]}-{depart_date[6:]}",
                 # "depart_time": f"{detail['sdt'][-4:-2]}:{detail['sdt'][-2:]}",
                 # "arrival_date": f"{arrival_date[:4]}-{arrival_date[4:6]}-{arrival_date[6:]}",
                 # "arrival_time": f"{detail['edt'][-4:-2]}:{detail['edt'][-2:]}",
-                "journey_time": f"{detail['jt'][:2]}시간 {detail['jt'][2:]}분",  # 소요 시간
+                # "journey_time": f"{detail['jt'][:2]}시간 {detail['jt'][2:]}분",  # 소요 시간
+                "journey_time": int(detail['jt'][:2])*60 + int(detail['jt'][2:]),
+                "connect_time": int(detail['ct'][:2])*60 + int(detail['ct'][2:]),
+                # "connect_time": detail['ct']  # 환승 시간
                 "depart_timestamp": timestamp_to_iso8601(depart_timestamp),
                 "arrival_timestamp": timestamp_to_iso8601(arrival_timestamp),
-                "connect_time": detail['ct']  # 환승 시간
             }
             
             flight_group["flights"].append(flight_info)
@@ -68,12 +86,14 @@ def save_flight_info(schedules, airline_map, airport_map, departure, arrival, qu
             all_flights.append(flight_group)
 
     # JSON 파일로 저장
-    with open('flight_data.json', 'w', encoding='utf-8') as f:
+    file_path = f'일본/{arrival}/flight_info/{departure}_{arrival}_{date}.json'
+    ensure_dir(file_path)
+    with open(file_path, 'w', encoding='utf-8') as f:
         json.dump(all_flights, f, ensure_ascii=False, indent=4)
-    print("항공편 정보가 'flights_data.json' 파일로 저장되었습니다.")
+    print(f"항공편 정보가 '{file_path}' 파일로 저장되었습니다.")
     queue.put("Flight info saved")
 
-def save_fare_info(fares, fare_types, queue):
+def save_fare_info(fares, fare_types, departure, arrival, date, queue):
     '''운임 정보 저장'''
     total_fare_info = []
     # 운임 정보 처리
@@ -113,9 +133,11 @@ def save_fare_info(fares, fare_types, queue):
         total_fare_info.append(air_id_info)
 
     # JSON으로 저장
-    with open('total_fare_info.json', 'w', encoding='utf-8') as f:
+    file_path = f'일본/{arrival}/fare_info/{departure}_{arrival}_{date}.json'
+    ensure_dir(file_path)
+    with open(file_path, 'w', encoding='utf-8') as f:
         json.dump(total_fare_info, f, ensure_ascii=False, indent=4)
-    print('운임 정보 파일이 저장되었습니다.')
+    print(f"운임 정보가 '{file_path}' 파일로 저장되었습니다.")
     queue.put("Fare info saved")
 
 def crawl_naver_flights(departure, arrival, date):
@@ -163,8 +185,8 @@ def crawl_naver_flights(departure, arrival, date):
 
     # 멀티프로세싱 설정
     queue = Queue()
-    p1 = Process(target=save_flight_info, args=(schedules, airline_map, airport_map, departure, arrival, queue)) # 항공권 정보 프로세스
-    p2 = Process(target=save_fare_info, args=(fares, fare_types, queue)) # 운임 정보 프로세스
+    p1 = Process(target=save_flight_info, args=(schedules, airline_map, airport_map, departure, arrival, date, queue)) # 항공권 정보 프로세스
+    p2 = Process(target=save_fare_info, args=(fares, fare_types, departure, arrival, date,queue)) # 운임 정보 프로세스
 
     # 프로세스 시작
     p1.start()
@@ -176,9 +198,19 @@ def crawl_naver_flights(departure, arrival, date):
 
     return 0
 
-# 실행
+
+# 오늘 기준 30일 뒤까지 크롤링
 if __name__ == "__main__":
-    departure = "ICN"
-    arrival = "KIX"
-    date = "20240818"  # 날짜 변경
-    df_flights = crawl_naver_flights(departure, arrival, date)
+    departure = "SEL"
+    arrival = "TYO"
+    '''우선 일본 항공을 목적으로 디버깅'''
+    for airport in request_airport_map['일본']:
+        arrival = airport['IATA']
+        '''오늘 날짜 기준 3일 뒤의 데이터까지 수집'''
+        today = date.today()
+        for i in range(1, 4):
+            target_date = today + timedelta(days=i)
+            
+            formatted_date = target_date.strftime('%Y%m%d')
+            
+            crawl_naver_flights(departure, arrival, formatted_date)
