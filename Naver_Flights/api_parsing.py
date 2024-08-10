@@ -5,6 +5,10 @@ from datetime import datetime, timezone
 from api_params import *
 from multiprocessing import Process, Queue
 
+'''항공 코드와 국가를 1대 1 매칭한 딕셔너리'''
+with open('Naver_Flights/airport_region_map.json', 'r', encoding='utf-8') as f:
+    airport_region_map=json.load(f)
+
 def save_flight_info(schedules, airline_map, airport_map, departure, arrival, queue):
     '''비행 정보 저장'''
     # 비행 정보를 저장할 리스트
@@ -29,7 +33,9 @@ def save_flight_info(schedules, airline_map, airport_map, departure, arrival, qu
                 continue
         for index, detail in enumerate(details):
             depart_airport = detail['sa']  # 출발 공항
+            depart_region = airport_region_map[detail['sa']]
             arrival_airport = detail['ea']  # 도착 공항
+            arrival_region = airport_region_map[detail['ea']]
             
             depart_airport = urllib.parse.unquote(airport_map.get(depart_airport, "Unknown"))  # url 변환 값 역변환
             arrival_airport = urllib.parse.unquote(airport_map.get(arrival_airport, "Unknown"))  # url 변환 값 역변환
@@ -43,11 +49,12 @@ def save_flight_info(schedules, airline_map, airport_map, departure, arrival, qu
                 "air_id": air_id_list[index],  # 항공편 ID
                 "airline": airline_map.get(detail['av'], "Unknown"),  # 항공사
                 "depart_airport": depart_airport,
-                "arrival_airport": arrival_airport,
-                "depart_date": f"{depart_date[:4]}-{depart_date[4:6]}-{depart_date[6:]}",
-                "depart_time": f"{detail['sdt'][-4:-2]}:{detail['sdt'][-2:]}",
-                "arrival_date": f"{arrival_date[:4]}-{arrival_date[4:6]}-{arrival_date[6:]}",
-                "arrival_time": f"{detail['edt'][-4:-2]}:{detail['edt'][-2:]}",
+                "depart_region": depart_region,
+                "arrival_region": arrival_region,
+                # "depart_date": f"{depart_date[:4]}-{depart_date[4:6]}-{depart_date[6:]}",
+                # "depart_time": f"{detail['sdt'][-4:-2]}:{detail['sdt'][-2:]}",
+                # "arrival_date": f"{arrival_date[:4]}-{arrival_date[4:6]}-{arrival_date[6:]}",
+                # "arrival_time": f"{detail['edt'][-4:-2]}:{detail['edt'][-2:]}",
                 "journey_time": f"{detail['jt'][:2]}시간 {detail['jt'][2:]}분",  # 소요 시간
                 "depart_timestamp": timestamp_to_iso8601(depart_timestamp),
                 "arrival_timestamp": timestamp_to_iso8601(arrival_timestamp),
@@ -74,6 +81,8 @@ def save_fare_info(fares, fare_types, queue):
         air_id_info = {"air_id": key, "options": []}
         
         for option, fare_list in values['fare'].items():
+            # if option != "A01": # 데이터 용량 확보 차원에서 우선 성인/일반 요금만 수집
+            #     continue
             fare_option_info = {"option": decode_url_text(fare_types[option]), "purchases": []}
             
             for i in fare_list:
@@ -87,7 +96,6 @@ def save_fare_info(fares, fare_types, queue):
                     adult_fare = base_fare + naver_fare + tax + Qcharge
                     
                     reserve = i['ReserveParameter']['#cdata-section']
-                    
                     purchase_info['purchase_url'] = reserve
                     purchase_info['total_fare'] = adult_fare
                     purchase_info['base_fare'] = base_fare
@@ -140,8 +148,8 @@ def crawl_naver_flights(departure, arrival, date):
     response_data2 = send_request(payload2, headers)
     if not response_data2:
         return []
-    # with open('test_2.json', 'w', encoding='utf-8-sig') as file:
-    #     json.dump(response_data2, file, ensure_ascii=False, indent=4)
+    with open('test_2.json', 'w', encoding='utf-8-sig') as file:
+        json.dump(response_data2, file, ensure_ascii=False, indent=4)
 
     international_list = response_data2.get("data", {}).get("internationalList", {})
     results = international_list.get("results", {})
