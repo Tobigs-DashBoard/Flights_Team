@@ -1,9 +1,5 @@
-import requests
-from datetime import datetime, timezone
-import urllib.parse
-import os
 '''api 요청 페이로드 형식'''
-def payload_form(first, departure, arrival, date, galileo_key="", travel_biz_key=""):
+def international_payload_form(first, departure, arrival, date, galileo_key="", travel_biz_key=""):
     if first:
         galileo_flag=True
         galileo_key=""
@@ -14,53 +10,210 @@ def payload_form(first, departure, arrival, date, galileo_key="", travel_biz_key
         galileo_flag=galileo_key!=""
         travel_biz_key=travel_biz_key
         travel_biz_flag=travel_biz_key!=""
-
+    
     payload={
-        "operationName": "getInternationalList",
-        "variables": {
-            "adult": 1,
-            "child": 0,
-            "fareType": "Y",
-            "galileoFlag": galileo_flag,
-            "galileoKey": galileo_key, # 인증키
-            "infant": 0,
-            "isDirect": False, # 직항 여부
-            "itinerary": [
-                {
-                    "departureAirport": departure,
-                    "arrivalAirport": arrival,
-                    "departureDate": date
+            "operationName": "getInternationalList",
+            "variables": {
+                "adult": 1,
+                "child": 0,
+                "fareType": "Y",
+                "galileoFlag": galileo_flag,
+                "galileoKey": galileo_key, # 인증키
+                "infant": 0,
+                "isDirect": False, # 직항 여부
+                "itinerary": [
+                    {
+                        "departureAirport": departure,
+                        "arrivalAirport": arrival,
+                        "departureDate": date
+                    }
+                ],
+                "stayLength": "", # 편도
+                "travelBizKey": travel_biz_key,
+                "travelBizFlag": travel_biz_flag,
+                "where": "pc",
+                "trip": "OW",
+            },
+            "query": """
+            query getInternationalList($trip: InternationalList_TripType!, $itinerary: [InternationalList_itinerary]!, $adult: Int = 1, $child: Int = 0, $infant: Int = 0, $fareType: InternationalList_CabinClass!, $where: InternationalList_DeviceType = pc, $isDirect: Boolean = false, $stayLength: String, $galileoKey: String, $galileoFlag: Boolean = true, $travelBizKey: String, $travelBizFlag: Boolean = true) {
+            internationalList(
+                input: {trip: $trip, itinerary: $itinerary, person: {adult: $adult, child: $child, infant: $infant}, fareType: $fareType, where: $where, isDirect: $isDirect, stayLength: $stayLength, galileoKey: $galileoKey, galileoFlag: $galileoFlag, travelBizKey: $travelBizKey, travelBizFlag: $travelBizFlag}
+            ) {
+                galileoKey
+                galileoFlag
+                travelBizKey
+                travelBizFlag
+                totalResCnt
+                resCnt
+                results {
+                airlines
+                airports
+                fareTypes
+                schedules
+                fares
+                errors
                 }
-            ],
-            "stayLength": "", # 편도
-            "travelBizKey": travel_biz_key,
-            "travelBizFlag": travel_biz_flag,
-            "where": "pc",
-            "trip": "OW",
-        },
-        "query": """
-        query getInternationalList($trip: InternationalList_TripType!, $itinerary: [InternationalList_itinerary]!, $adult: Int = 1, $child: Int = 0, $infant: Int = 0, $fareType: InternationalList_CabinClass!, $where: InternationalList_DeviceType = pc, $isDirect: Boolean = false, $stayLength: String, $galileoKey: String, $galileoFlag: Boolean = true, $travelBizKey: String, $travelBizFlag: Boolean = true) {
-          internationalList(
-            input: {trip: $trip, itinerary: $itinerary, person: {adult: $adult, child: $child, infant: $infant}, fareType: $fareType, where: $where, isDirect: $isDirect, stayLength: $stayLength, galileoKey: $galileoKey, galileoFlag: $galileoFlag, travelBizKey: $travelBizKey, travelBizFlag: $travelBizFlag}
-          ) {
-            galileoKey
-            galileoFlag
-            travelBizKey
-            travelBizFlag
-            totalResCnt
-            resCnt
-            results {
-              airlines
-              airports
-              fareTypes
-              schedules
-              fares
-              errors
             }
-          }
+            }
+            """
         }
-        """
-    }
+    return payload
+
+def domastic_payload_form(departure, arrival, date):
+    payload={
+            "operationName": "domesticFlights",
+            "variables": {
+                "device":"PC",
+                "fareType":"YC",
+                "itinerary": [
+                    {
+                        "departureAirport": departure,
+                        "arrivalAirport": arrival,
+                        "departureDate": date
+                    }
+                ],
+                "person":{
+                    "adult": 1,
+                    "child": 0,
+                    "infant": 0
+                }
+            },
+            "query":"""
+                query domesticFlights($itinerary: [Itinerary]!, $person: Passengers!, $fareType: SeatClass!, $device: Device!) {
+                domesticFlights(
+                    itinerary: $itinerary
+                    person: $person
+                    fareType: $fareType
+                    device: $device
+                ) {
+                    departures {
+                    airlineCode
+                    airlineName
+                    codeshare
+                    fitName
+                    depCity
+                    arrCity
+                    departureCityName
+                    arrivalCityName
+                    departureDate
+                    arrivalDate
+                    dayDiff
+                    departureTime
+                    arrivalTime
+                    detailedClass
+                    seatClass
+                    seatCnt
+                    journeyTime
+                    minFare
+                    supportNPay
+                    fare {
+                        agtCode
+                        bookingClass
+                        adultFare
+                        childFare
+                        aFuel
+                        cFuel
+                        aTax
+                        cTax
+                        publishFee
+                        etc
+                        supportNPay
+                        discountFare {
+                        adultDiscountFare
+                        childDiscountFare
+                        discountInfo {
+                            cardType {
+                            code
+                            name
+                            }
+                            discountType
+                            discountRange
+                            amount {
+                            unit
+                            value
+                            }
+                        }
+                        }
+                    }
+                    }
+                    arrivals {
+                    airlineCode
+                    airlineName
+                    codeshare
+                    fitName
+                    depCity
+                    arrCity
+                    departureCityName
+                    arrivalCityName
+                    departureDate
+                    arrivalDate
+                    dayDiff
+                    departureTime
+                    arrivalTime
+                    detailedClass
+                    seatClass
+                    seatCnt
+                    journeyTime
+                    minFare
+                    supportNPay
+                    fare {
+                        agtCode
+                        bookingClass
+                        adultFare
+                        childFare
+                        aFuel
+                        cFuel
+                        aTax
+                        cTax
+                        publishFee
+                        etc
+                        supportNPay
+                        discountFare {
+                        adultDiscountFare
+                        childDiscountFare
+                        discountInfo {
+                            cardType {
+                            code
+                            name
+                            }
+                            discountType
+                            discountRange
+                            amount {
+                            unit
+                            value
+                            }
+                        }
+                        }
+                    }
+                    }
+                }
+                promotions(route: domestic) {
+                    departureStartDate
+                    departureEndDate
+                    paymentMethods {
+                    code
+                    name
+                    }
+                    otas
+                    airlines
+                    originAirports
+                    destinationAirports
+                    passengers {
+                    adult
+                    child
+                    infant
+                    }
+                    benefit {
+                    unit
+                    value(route: domestic)
+                    limit
+                    }
+                    description
+                }
+                }
+                """
+        }
+    
     return payload
 
 def return_header(departure, arrival, date):
@@ -88,37 +241,3 @@ def return_header(departure, arrival, date):
         # "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36"
     }
     return headers
-
-'''네이버 API 서버에 request를 보냄'''
-def send_request(payload, headers):
-    url = "https://airline-api.naver.com/graphql"
-    try:
-        response = requests.post(url, json=payload, headers=headers)
-        response.raise_for_status()
-        return response.json()
-    except Exception as e:
-        print("API 요청 오류", e)
-        exit()
-
-'''보기 쉽게 타임스템프 형식 변환'''
-def timestamp_to_iso8601(timestamp):
-    dt = datetime.fromtimestamp(timestamp, tz=timezone.utc)
-    return dt.strftime('%Y-%m-%dT%H:%M:%SZ')
-
-
-def return_time_stamp(time):
-    date = time[:-4]
-    hour = time[-4:-2]
-    minute = time[-2:]
-    datetime_str = f"{date} {hour}:{minute}"
-    datetime_form = datetime.strptime(datetime_str, "%Y%m%d %H:%M").replace(tzinfo=timezone.utc)
-    timestamp = datetime_form.timestamp()
-    return date, hour, minute, timestamp
-
-def decode_url_text(text):
-    return urllib.parse.unquote(text)
-
-def ensure_dir(file_path):
-    directory = os.path.dirname(file_path)
-    if not os.path.exists(directory):
-        os.makedirs(directory, exist_ok=True)
