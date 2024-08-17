@@ -30,8 +30,8 @@ if __name__ == "__main__":
                 else:
                     domestic_flag=False
                 cnt=0 # 예외처리용 카운터
-                for i in range(1, 2):
-                    if cnt>=5: # 연속으로 30일간의 항공편이 없으면 해당 출발지 도착지 조합은 검색 중단
+                for i in range(1, 90):
+                    if cnt>=10: # 연속으로 10일간의 항공편이 없으면 해당 출발지 도착지 조합은 검색 중단
                         print(f"{departure}에서 {arrival}로 가는 노선 검색 중단: 연속 30일 항공편 없음")
                         break
                     elif domestic_flag:

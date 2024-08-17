@@ -56,7 +56,7 @@ def fetch_domestic_flights(departure, arrival, date, today, cnt):
 
         query = query_dict['flight_info_table']
         execute_db_query(conn, cur, query, (
-                air_id, air['airlineName'], 
+                air_id, airline_name, 
                 depart_country, depart_airport,depart_timestamp,
                 arrival_country, arrival_airport, arrival_timestamp,
                 journey_time,

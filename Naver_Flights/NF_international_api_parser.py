@@ -4,24 +4,6 @@ from NF_api_params import international_payload_form, return_header
 from NF_functions import *
 from NF_db_params import get_db_connection, execute_db_query, query_dict
 from multiprocessing import Process, Queue
-# from psycopg2 import sql
-
-# def save_flights(schedules, today):
-#     conn=get_db_connection() # db 연결
-#     cur = conn.cursor() # DB 커서 객체 (insert, delete, select 등 명령어 수행)
-#     fetched_date=today.strftime('%Y%m%d')
-
-#     for schedule in schedules[0].values():
-#         details = schedule['detail']
-#         air_id = schedule['id']
-#         air_id_list = air_id.split('+')
-#         is_domestic=False # 해외 항공권 여부
-#         is_layover = "+" in schedule['id'] and len(details) > 1  # 경유 여부 확인
-#         layover_list=str(air_id_list) # 경유 항공권 리스트
-
-#         # flights 테이블에 삽입
-#         query = query_dict['flights_table']
-#         execute_db_query(conn, cur, query, (air_id, is_domestic, is_layover, layover_list, fetched_date))
 
 def save_flight_info(schedules, airline_map, today, queue):
     '''비행 정보 저장'''
