@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 import os
 
 def return_header_payload(origin_entity_id, destination_entity_id, date, adults, cabin_class):
+    # origin_entity_id="27538638"
     headers = {
         "authority": "www.skyscanner.co.kr",
         "accept": "application/json",
@@ -22,9 +23,9 @@ def return_header_payload(origin_entity_id, destination_entity_id, date, adults,
         "x-skyscanner-channelid":"website",
         "x-skyscanner-locale":"ko-KR",
         "x-skyscanner-currency":"KRW",
-        "x-skyscanner-traveller-context": "46e93065-10a4-4ff7-8e3c-2a177e638f53",
-        "x-skyscanner-trustedfunnelid":"0ab5d749-81aa-4a0c-b943-c72436a3c072",
-        "x-skyscanner-viewid": "0ab5d749-81aa-4a0c-b943-c72436a3c072",
+        "x-skyscanner-traveller-context": "5c2f44a8-c89d-4aad-a21c-22752da99943",
+        "x-skyscanner-trustedfunnelid":"639fcee5-7975-48b1-aa6e-ddd05fab2afd",
+        "x-skyscanner-viewid": "639fcee5-7975-48b1-aa6e-ddd05fab2afd",
         }
     
     payload = {
