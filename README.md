@@ -21,8 +21,8 @@ erDiagram
         varchar arrival_airport
         timestamp depart_timestamp
         timestamp arrival_timestamp
-        varchar journey_time
-        varchar connect_time
+        integer journey_time
+        integer connect_time
         date fetched_date PK, FK
     }
     FARE_INFO {
