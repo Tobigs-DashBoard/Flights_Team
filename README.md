@@ -1,6 +1,5 @@
 # 네이버 항공권 DB 스키마
 
-## DB 스키마
 ```mermaid
 erDiagram
     FLIGHTS ||--o{ FLIGHT_INFO : has
