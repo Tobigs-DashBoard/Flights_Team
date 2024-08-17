@@ -24,8 +24,8 @@ def execute_db_query(conn,cur, query, params=None):
 query_dict={
     "flights_table":
             """
-            INSERT INTO flights (air_id, is_layover, fetched_date)
-            VALUES (%s, %s, %s)
+            INSERT INTO flights (air_id, is_domestic, is_layover, layover_list, fetched_date)
+            VALUES (%s, %s, %s, %s, %s)
             ON CONFLICT (air_id, fetched_date) DO UPDATE
             SET is_layover = EXCLUDED.is_layover
             """,
@@ -33,14 +33,14 @@ query_dict={
     "flight_info_table":
             """
             INSERT INTO flight_info
-            (air_id, air_id_segment, fetched_date, airline, depart_region, depart_airport, arrival_region, 
-            arrival_airport, journey_time, connect_time, depart_timestamp, arrival_timestamp )
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            ON CONFLICT (air_id, air_id_segment, fetched_date) DO UPDATE
+            (air_id, airline, depart_country, depart_airport, depart_timestamp, arrival_country, 
+            arrival_airport, arrival_timestamp, journey_time, connect_time, fetched_date)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (air_id, fetched_date) DO UPDATE
             SET airline = EXCLUDED.airline,
-                depart_region = EXCLUDED.depart_region,
+                depart_country = EXCLUDED.depart_country,
                 depart_airport = EXCLUDED.depart_airport,
-                arrival_region = EXCLUDED.arrival_region,
+                arrival_country = EXCLUDED.arrival_country,
                 arrival_airport = EXCLUDED.arrival_airport,
                 journey_time = EXCLUDED.journey_time,
                 connect_time = EXCLUDED.connect_time,
@@ -51,14 +51,13 @@ query_dict={
     "fare_info_table":
             """
             INSERT INTO fare_info 
-            (air_id, option_type, fetched_date, total_fare, base_fare, naver_fare, tax, qcharge, purchase_url)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            (air_id, option_type, agt_code, adult_fare, child_fare, infant_fare, purchase_url, fetched_date)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT (air_id, option_type, fetched_date) DO UPDATE
-            SET total_fare = EXCLUDED.total_fare,
-            base_fare = EXCLUDED.base_fare,
-            naver_fare = EXCLUDED.naver_fare,
-            tax = EXCLUDED.tax,
-            qcharge = EXCLUDED.qcharge,
+            SET agt_code = EXCLUDED.agt_code,
+            adult_fare = EXCLUDED.adult_fare,
+            child_fare = EXCLUDED.child_fare,
+            infant_fare = EXCLUDED.infant_fare,
             purchase_url = EXCLUDED.purchase_url
             """
 }
