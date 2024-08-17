@@ -3,36 +3,37 @@
 ## DB 스키마
 ```mermaid
 erDiagram
-    FLIGHTS ||--o{ FARE_INFO : has
     FLIGHTS ||--o{ FLIGHT_INFO : has
+    FLIGHTS ||--o{ FARE_INFO : has
     FLIGHTS {
-        string air_id PK
-        boolean is_layover
+        varchar air_id PK
         boolean is_domestic
-        string layover_list
+        boolean is_layover
         date fetched_date PK
-    }
-    FARE_INFO {
-        string air_id PK
-        string option_type PK
-        string agt_code
-        float adult_fare
-        float child_fare
-        float infant_fare
-        string purchase_url
-        date fetched_date PK
+        text layover_list
+        timestamp created_at
     }
     FLIGHT_INFO {
-        string air_id PK
-        string airline
-        string depart_country
-        string depart_airport
-        string arrival_country
-        string arrival_airport
-        datetime arrival_timestamp
-        datetime depart_timestamp
-        time journey_time
-        time connect_time
+        varchar air_id PK, FK
+        varchar airline
+        varchar depart_country
+        varchar depart_airport
+        varchar arrival_country
+        varchar arrival_airport
+        timestamp depart_timestamp
+        timestamp arrival_timestamp
+        varchar journey_time
+        varchar connect_time
+        date fetched_date PK, FK
+    }
+    FARE_INFO {
+        varchar air_id PK
+        varchar option_type PK
+        varchar agt_code
+        integer adult_fare
+        integer child_fare
+        integer infant_fare
         date fetched_date PK
+        text purchase_url
     }
 ```
