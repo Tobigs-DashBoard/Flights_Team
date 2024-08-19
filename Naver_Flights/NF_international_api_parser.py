@@ -5,6 +5,9 @@ from NF_functions import *
 from NF_db_params import get_db_connection, execute_db_query, query_dict
 from multiprocessing import Process, Queue
 
+# 로깅 설정
+logger = setup_logger()
+
 def save_flight_info(schedules, airline_map, today, queue):
     '''비행 정보 저장'''
     conn=get_db_connection() # db 연결
@@ -72,7 +75,7 @@ def save_flight_info(schedules, airline_map, today, queue):
                 fetched_date
             ))
 
-    print(f"항공편 정보가 데이터베이스에 저장되었습니다.")
+    # logger.info(f"항공편 정보가 데이터베이스에 저장되었습니다.")
     conn.commit()
     conn.close() # db 연결 종료
     queue.put("Flight info saved to database")
@@ -117,15 +120,15 @@ def save_fare_info(fares, fare_types, today, queue):
                     execute_db_query(conn, cur, query, (
                             key, option, agt, adult_fare, child_fare, infant_fare, purchase_url, fetched_date))
                 except Exception as e:
-                    print(f"운임 정보 처리 중 오류: {e}")
+                    logger.info(f"운임 정보 처리 중 오류: {e}")
                     continue
     conn.commit()
     conn.close()
-    print(f"운임 정보가 데이터베이스에 저장되었습니다.")
+    # logger.info(f"운임 정보가 데이터베이스에 저장되었습니다.")
     queue.put("Fare info saved to database")
 
 def fetch_international_flights(departure, arrival, date, today, cnt):
-    print("외국 항공권입니다.")
+    # logger.info("외국 항공권입니다.")
     headers = return_header(departure, arrival, date)
     
     # 첫 번째 요청
@@ -156,7 +159,7 @@ def fetch_international_flights(departure, arrival, date, today, cnt):
     fare_types = results.get("fareTypes", [])
     
     if len(schedules) == 0:
-        print(f"{airport_region_map[departure]['name']}에서 {airport_region_map[arrival]['name']}로 가는 항공권이 없습니다. {date}")
+        # logger.info(f"{airport_region_map[departure]['name']}에서 {airport_region_map[arrival]['name']}로 가는 항공권이 없습니다. {date}")
         cnt+=1
         return cnt
     # 항공편이 있으면 체크개수 초기화
@@ -173,5 +176,5 @@ def fetch_international_flights(departure, arrival, date, today, cnt):
     
     p1.join()
     p2.join()
-    print(f"{airport_region_map[departure]['name']}에서 {airport_region_map[arrival]['name']}로 가는 항공권 정보가 데이터베이스에 저장되었습니다.")
+    # logger.info(f"{airport_region_map[departure]['name']}에서 {airport_region_map[arrival]['name']}로 가는 항공권 정보가 데이터베이스에 저장되었습니다.\n")
     return cnt

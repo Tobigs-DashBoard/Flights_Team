@@ -1,28 +1,26 @@
-import json
-import time
-import os
 from NF_api_params import domastic_payload_form, return_header
 from NF_functions import *
 from NF_db_params import get_db_connection, execute_db_query, query_dict
-from multiprocessing import Process, Queue
-from psycopg2 import sql
+
+# 로깅 설정
+logger=setup_logger()
 
 def fetch_domestic_flights(departure, arrival, date, today, cnt):
-    print("국내 항공권 입니다.")
+    # logger.info("국내 항공권 입니다.")
     headers = return_header(departure, arrival, date)
     
     # 첫 번째 요청
     payload1 = domastic_payload_form(departure=departure, arrival=arrival, date=date)
     response_data1 = send_request(payload1, headers)
     if not response_data1['data']['domesticFlights']:
-        print(f"{airport_region_map[departure]['name']}에서 {airport_region_map[arrival]['name']}로 가는 항공권이 없습니다. {date}")
+        # logger.info(f"{airport_region_map[departure]['name']}에서 {airport_region_map[arrival]['name']}로 가는 항공권이 없습니다. {date}")
         cnt +=1
         return cnt
     
     schedules=response_data1['data']['domesticFlights']['departures']
 
     if len(schedules) == 0:
-        print(f"{airport_region_map[departure]['name']}에서 {airport_region_map[arrival]['name']}로 가는 항공권이 없습니다. {date}")
+        # logger.info(f"{airport_region_map[departure]['name']}에서 {airport_region_map[arrival]['name']}로 가는 항공권이 없습니다. {date}")
         cnt+=1
         return cnt
     else:
@@ -87,7 +85,7 @@ def fetch_domestic_flights(departure, arrival, date, today, cnt):
                                                 adult_fare, child_fare, infant_fare, purchase_url, fetched_date))
         
 
-    print(f"{airport_region_map[departure]['name']}에서 {airport_region_map[arrival]['name']}로 가는 항공권 정보가 데이터베이스에 저장되었습니다.")
+    # logger.info(f"{airport_region_map[departure]['name']}에서 {airport_region_map[arrival]['name']}로 가는 항공권 정보가 데이터베이스에 저장되었습니다.\n")
     conn.commit()
     conn.close()
     return cnt

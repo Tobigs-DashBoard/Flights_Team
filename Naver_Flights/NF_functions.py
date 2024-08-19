@@ -3,14 +3,27 @@ from datetime import datetime, timezone
 import urllib.parse
 import os
 import json
-import time
+import logging
+
+def setup_logger():
+    logging.basicConfig(
+        filename='crawling_log.log',
+        level=logging.INFO,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
+
+    # 루트 로거 반환
+    return logging.getLogger()
+
+logger=setup_logger()
 
 def read_json_file(file_path):
     with open(file_path, 'r', encoding='utf-8') as f:
         return json.load(f)
     
-airport_region_map = read_json_file('Naver_Flights/maps/airport_region_map.json') # 공항 코드 <-> 이름, 지역 맵
-request_airport_map = read_json_file('Naver_Flights/maps/request_airport_map.json') # 네이버 항공권 검색 공항 코드 맵
+airport_region_map = read_json_file('maps/airport_region_map.json') # 공항 코드 <-> 이름, 지역 맵
+request_airport_map = read_json_file('maps/request_airport_map.json') # 네이버 항공권 검색 공항 코드 맵
 
 '''네이버 API 서버에 request를 보냄'''
 def send_request(payload, headers):
@@ -20,7 +33,7 @@ def send_request(payload, headers):
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        print("API 요청 오류", e)
+        logger.info(f"API 요청 오류 {e}")
 
 '''보기 쉽게 타임스템프 형식 변환'''
 def timestamp_to_iso8601(timestamp):
@@ -45,3 +58,4 @@ def ensure_dir(file_path):
     directory = os.path.dirname(file_path)
     if not os.path.exists(directory):
         os.makedirs(directory, exist_ok=True)
+

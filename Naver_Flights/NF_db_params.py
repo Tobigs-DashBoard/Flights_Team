@@ -1,12 +1,12 @@
 import psycopg2
-
+from NF_functions import logger
 # DB 연결 함수
 def get_db_connection():
     return psycopg2.connect(
-        host="localhost",
-        database="naver_db",
-        user="postgres",
-        password="5994"
+        host="naver-flights.cdyk2yq24sjs.ap-northeast-2.rds.amazonaws.com", # 인스턴스 엔드포인트
+        database="naver_db", # 데이터베이스 이름
+        user="gunu", # 사용자 이름
+        password="rjsdn5994!" # 사용자 비밀번호
     )
 
 # DB 쿼리 실행 함수
@@ -15,7 +15,7 @@ def execute_db_query(conn,cur, query, params=None):
         cur.execute(query, params) # 쿼리 실행
         return True
     except Exception as e:
-        print(f"INSERT 오류: {e}")
+        logger.info(f"INSERT 오류: {e}")
         if conn:
             conn.rollback() # 오류난 경우 쿼리 이전으로 롤백
         return False
