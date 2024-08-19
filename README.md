@@ -45,43 +45,43 @@ erDiagram
 
 ### Flights 테이블
 
-| 컬럼명 | 데이터 타입 | 설명 | 비고 |
+| 컬럼명 | 데이터 타입 | 설명 | 예시 |
 |--------|------------|------|------|
-| air_id | varchar | 항공권 ID (출발날짜, 출발공항, 도착 공항, 항공편 번호) | Primary Key, 예: 20240830SGNDADVJ0640 |
-| is_domestic | boolean | 국내 항공편 여부 | T/F |
-| is_layover | boolean | 경유 여부 | T/F |
-| fetched_date | date | 수집된 날짜 | Primary Key |
-| layover_list | text | 경유 시, 편도 항공편 순서 | 예: [['20240907ICNSGNVJ0865','20240907SGNDADVJ0634']] |
-| created_at | timestamp | DB에 insert된 타임스탬프 | |
+| air_id | varchar | 항공권 ID (출발날짜, 출발공항, 도착 공항, 항공편 번호) | 20240927GMPPUSKE1827+20240928PUSFUKKE2137 |
+| is_domestic | boolean | 국내 항공편 여부 | false |
+| is_layover | boolean | 경유 여부 | true |
+| fetched_date | date | 수집된 날짜 | 2024-08-20 |
+| layover_list | text | 경유 시, 편도 항공편 순서 | ['20240927GMPPUSKE1827', '20240928PUSFUKKE2137'] |
+| created_at | timestamp | DB에 insert된 타임스탬프 | 2024-08-20 04:16:16.307186+09 |
 
 ### Flight_info 테이블
 
-| 컬럼명 | 데이터 타입 | 설명 | 비고 |
+| 컬럼명 | 데이터 타입 | 설명 | 예시 |
 |--------|------------|------|------|
-| air_id | varchar | 항공권 ID | Primary Key, Foreign Key |
-| airline | varchar | 항공사 | |
-| depart_country | varchar | 출발 국가 | 예: 대한민국, 일본 |
-| depart_airport | varchar | 출발 공항 | 예: 인천 국제 공항 |
-| arrival_country | varchar | 도착 국가 | |
-| arrival_airport | varchar | 도착 공항 | |
-| depart_timestamp | timestamp | 출발 타임스탬프 | |
-| arrival_timestamp | timestamp | 도착 타임스탬프 | |
-| journey_time | integer | 비행 시간 | |
-| connect_time | integer | 경유시 환승 시간 | |
-| fetched_date | date | 수집 날짜 | Primary Key, Foreign Key |
+| air_id | varchar | 항공권 ID | 20240927GMPPUSKE1827+20240928PUSFUKKE2137 |
+| airline | varchar | 항공사 | 대한항공 |
+| depart_country | varchar | 출발 국가 | 대한민국 |
+| depart_airport | varchar | 출발 공항 | 김포국제공항 |
+| arrival_country | varchar | 도착 국가 | 일본 |
+| arrival_airport | varchar | 도착 공항 | 후쿠오카 공항 |
+| depart_timestamp | timestamp | 출발 타임스탬프 | 2024-09-27 17:20:00 |
+| arrival_timestamp | timestamp | 도착 타임스탬프 | 2024-09-28 19:00:00 |
+| journey_time | integer | 비행 시간 | 60 |
+| connect_time | integer | 경유시 환승 시간 | 0 |
+| fetched_date | date | 수집 날짜 | 2024-08-20 |
 
 ### Fare_info 테이블
 
-| 컬럼명 | 데이터 타입 | 설명 | 비고 |
+| 컬럼명 | 데이터 타입 | 설명 | 예시 |
 |--------|------------|------|------|
-| air_id | varchar | 항공권 ID | Primary Key |
-| option_type | varchar | 구매 유형 | Primary Key, 예: 성인/모든 결제수단, 성인/삼성카드 |
-| agt_code | varchar | 여행사 코드 | 예: INT005 (인터파크) |
-| adult_fare | integer | 성인 요금 | |
-| child_fare | integer | 어린이 요금 | |
-| infant_fare | integer | 영유아 요금 | |
-| fetched_date | date | 수집 날짜 | Primary Key, Foreign Key |
-| purchase_url | text | 결제 페이지 url | |
+| air_id | varchar | 항공권 ID | 20240927GMPPUSKE1827+20240928PUSFUKKE2137 |
+| option_type | varchar | 구매 유형 | 성인/우리카드 |
+| agt_code | varchar | 여행사 코드 | INT005 |
+| adult_fare | integer | 성인 요금 | 210800 |
+| child_fare | integer | 어린이 요금 | 10000 |
+| infant_fare | integer | 영유아 요금 | 0 |
+| fetched_date | date | 수집 날짜 | 2024-08-20 |
+| purchase_url | text | 결제 페이지 url | https://fly.interpark.com/partner/... |
 
 
 ## 참고 사항
