@@ -47,7 +47,7 @@ erDiagram
 
 | 컬럼명 | 데이터 타입 | 설명 | 예시 |
 |--------|------------|------|------|
-| air_id | varchar | 항공권 ID (출발날짜, 출발공항, 도착 공항, 항공편 번호) | 20240927GMPPUSKE1827+20240928PUSFUKKE2137 |
+| air_id | varchar | 항공권 ID | 20240927GMPPUSKE1827+20240928PUSFUKKE2137 |
 | is_domestic | boolean | 국내 항공편 여부 | false |
 | is_layover | boolean | 경유 여부 | true |
 | fetched_date | date | 수집된 날짜 | 2024-08-20 |
