@@ -47,7 +47,7 @@ def return_time_stamp(time):
     minute = time[-2:]
     datetime_str = f"{date} {hour}:{minute}"
     datetime_form = datetime.strptime(datetime_str, "%Y%m%d %H:%M").replace(tzinfo=timezone.utc)
-    timestamp = datetime_form.timestamp()
+    timestamp = datetime_form.timestamp() 
     return timestamp
 
 def decode_url_text(text):
