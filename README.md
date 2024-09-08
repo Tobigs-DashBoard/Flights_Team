@@ -77,7 +77,7 @@ erDiagram
 | agt_code | varchar(50) | 여행사 코드 (PK) | INT005 |
 | adult_fare | integer | 성인 요금 | 210800 |
 | fetched_date | date | 수집 날짜 (PK, FK) | 2024-08-20 |
-| purchase_url | text | 결제 페이지 URL | https://fly.interpark.com/partner/... |
+| purchase_url | text | 결제 페이지 URL | https://... |
 
 ### LAYOVER_INFO 테이블
 
@@ -91,7 +91,7 @@ erDiagram
 
 ## 참고 사항
 - 공항 정보는 airport_info 테이블에서 공항 코드를 key로 찾을 수 있습니다.
-
+- 출발 시간과 도착 시간은 UTC (세계 협정시) 기준으로 저장되어 있습니다. 필요시 airport_info의 time_zone에 맞춰 공항 위치에 따른 시간대 변환이 가능합니다.
 
 ## 테이블 생성 SQL 쿼리
 
