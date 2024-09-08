@@ -73,7 +73,7 @@ erDiagram
 | 컬럼명 | 데이터 타입 | 설명 | 예시 |
 |--------|------------|------|------|
 | air_id | varchar(100) | 항공권 ID (PK, FK) | 20240927ICNPUSKE1827 |
-| option_type | varchar(50) | 구매 유형 (PK) | 성인/우리카드 |
+| option_type | varchar(50) | 구매 유형 (PK) | 일반석/할인석/비즈니스석 |
 | agt_code | varchar(50) | 여행사 코드 (PK) | INT005 |
 | adult_fare | integer | 성인 요금 | 210800 |
 | fetched_date | date | 수집 날짜 (PK, FK) | 2024-08-20 |
