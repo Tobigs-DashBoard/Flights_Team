@@ -3,10 +3,10 @@ from NF_functions import logger
 # DB 연결 함수
 def get_db_connection():
     return psycopg2.connect(
-        host="localhost", # 인스턴스 엔드포인트
-        database="naver_db", # 데이터베이스 이름
+        host="", # 인스턴스 엔드포인트
+        database="", # 데이터베이스 이름
         user="postgres", # 사용자 이름
-        password="5994" # 사용자 비밀번호
+        password="" # 사용자 비밀번호
     )
 
 # DB 쿼리 실행 함수
@@ -16,6 +16,7 @@ def execute_db_query(conn,cur, query, params=None):
         return True
     except Exception as e:
         logger.info(f"INSERT 오류: {e}")
+        # print(f"INSERT 오류: {e}")
         if conn:
             conn.rollback() # 오류난 경우 쿼리 이전으로 롤백
         return False
