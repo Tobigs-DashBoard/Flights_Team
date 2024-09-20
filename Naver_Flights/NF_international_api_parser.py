@@ -151,6 +151,7 @@ def save_fare_info(fares, fare_types, today, queue):
                             key, option, agt, adult_fare, purchase_url, fetched_date))
                 except Exception as e:
                     logger.info(f"운임 정보 처리 중 오류: {e}")
+                    # print(f"운임 정보 처리 중 오류: {e}")
                     continue
     conn.commit()
     conn.close()
@@ -164,8 +165,10 @@ def fetch_international_flights(departure, arrival, date, today, cnt):
     # 첫 번째 요청
     payload1 = international_payload_form(first=True, departure=departure, arrival=arrival, date=date)
     response_data1 = send_request(payload1, headers)
+    # TODO 요청오류났을때 어떻게 처리할지
     if not response_data1:
-        return []
+        cnt+=1
+        return cnt
     
     international_list = response_data1.get("data", {}).get("internationalList", {})
     galileo_key = international_list.get("galileoKey")
@@ -177,6 +180,7 @@ def fetch_international_flights(departure, arrival, date, today, cnt):
     payload2 = international_payload_form(first=False, departure=departure, arrival=arrival, date=date, galileo_key=galileo_key, travel_biz_key=travel_biz_key)
     response_data2 = send_request(payload2, headers)
     if not response_data2:
+        cnt+=1
         return cnt
 
     international_list = response_data2.get("data", {}).get("internationalList", {})

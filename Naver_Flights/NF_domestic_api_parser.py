@@ -12,6 +12,10 @@ def fetch_domestic_flights(departure, arrival, date, today, cnt):
     # 첫 번째 요청
     payload1 = domastic_payload_form(departure=departure, arrival=arrival, date=date)
     response_data1 = send_request(payload1, headers)
+    # TODO api 오류 났울 때 어떻게 처리할지
+    if not response_data1:
+        cnt+=1
+        return cnt
     if not response_data1['data']['domesticFlights']:
         # logger.info(f"{airport_map[departure]['name']}에서 {airport_map[arrival]['name']}로 가는 항공권이 없습니다. {date}")
         cnt +=1
@@ -40,7 +44,7 @@ def fetch_domestic_flights(departure, arrival, date, today, cnt):
         depart_airport= air['depCity'] # airport_map[air['depCity']]['name']
         
         depart_timestamp= convert_to_utc(convert_to_timestamp(air['departureDate'], air['depCity'])) # UTC 기준 출발 시간
-            
+        
         arrival_airport= air['arrCity'] # airport_map[air['arrCity']]['name']
         # arrival_country=airport_map[air['arrCity']]['country']
         arrival_timestamp= convert_to_utc(convert_to_timestamp(air['arrivalDate'], air['depCity'])) # UTC 기준 출발 시간
