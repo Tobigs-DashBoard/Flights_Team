@@ -22,6 +22,9 @@ def execute_db_query(conn,cur, query, params=None):
         return False
     
 
+def batch_insert():
+    return 0
+
 query_dict = {
     "flight_info": """
         INSERT INTO flight_info
