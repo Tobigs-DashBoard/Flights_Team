@@ -7,8 +7,9 @@ import logging
 from pytz import timezone as py_timezone
 
 def setup_logger():
+    log_path = os.environ.get('LOG_PATH', '/app/crawling_log.log')
     logging.basicConfig(
-        filename='crawling_log.log',
+        filename=log_path,
         level=logging.INFO,
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S'
@@ -34,6 +35,8 @@ def send_request(payload, headers):
         return response.json()
     except Exception as e:
         logger.info(f"API 요청 오류 {e}")
+        print(f"API 요청 오류 {e}")
+        return False
 
 def return_time_stamp(time):
     date = time[:-4]
