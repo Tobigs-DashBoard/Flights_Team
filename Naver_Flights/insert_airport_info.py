@@ -1,5 +1,5 @@
-from NF_functions import *
-from NF_db_params import *
+from NF_functions import airport_map
+from NF_db_params import get_db_connection, execute_db_query, query_dict
 conn=get_db_connection()
 cur=conn.cursor()
 insert_query=query_dict['airport_info']
