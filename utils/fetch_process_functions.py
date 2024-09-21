@@ -2,29 +2,10 @@ import requests
 from datetime import datetime, timezone
 import urllib.parse
 import os
-import json
-import logging
 from pytz import timezone as py_timezone
-
-def setup_logger():
-    log_path = os.environ.get('LOG_PATH', '/app/crawling_log.log')
-    logging.basicConfig(
-        filename=log_path,
-        level=logging.INFO,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S'
-    )
-    # 루트 로거 반환
-    return logging.getLogger()
-
-logger=setup_logger()
-
-def read_json_file(file_path):
-    with open(file_path, 'r', encoding='utf-8-sig') as f:
-        return json.load(f)
-    
-airport_map = read_json_file('maps/airport_map.json') # 공항 코드 <-> 이름, 지역 맵
-request_airport_map = read_json_file('maps/request_airport_map.json') # 네이버 항공권 검색 공항 코드 맵
+from NF_global_objects import get_logger, get_airport_map
+logger=get_logger()
+airport_map=get_airport_map()
 
 '''네이버 API 서버에 request를 보냄'''
 def send_request(payload, headers):
@@ -50,11 +31,6 @@ def return_time_stamp(time):
 def decode_url_text(text):
     return urllib.parse.unquote(text)
 
-'''디버깅용 파일 저장'''
-def ensure_dir(file_path):
-    directory = os.path.dirname(file_path)
-    if not os.path.exists(directory):
-        os.makedirs(directory, exist_ok=True)
 
 def get_airport_timezone(airport_code):
     return py_timezone(airport_map[airport_code]['time_zone'])
@@ -71,3 +47,10 @@ def convert_to_timestamp(time_str, airport_code):
 
 def convert_to_utc(localized_time):
     return localized_time.astimezone(py_timezone('UTC')).isoformat()
+
+
+'''디버깅용 파일 저장'''
+def ensure_dir(file_path):
+    directory = os.path.dirname(file_path)
+    if not os.path.exists(directory):
+        os.makedirs(directory, exist_ok=True)
