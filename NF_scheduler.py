@@ -6,6 +6,7 @@ from datetime import timedelta
 import random
 import time
 import os
+import traceback
 
 logger=get_logger()
 airport_map=get_airport_map()
@@ -52,7 +53,7 @@ def crawl_flights(departure, arrival, is_domestic):
             # else:
                 # logger.info(f"{target_date}에 '{departure_name}'에서 '{arrival_name}'로 가는 노선 데이터 수집 완료")
         
-        random_sec = random.randint(3, 5)
+        random_sec = random.randint(3, 7)
         time.sleep(random_sec)
 
     end_time = time.time()
@@ -80,12 +81,19 @@ if __name__ == "__main__":
                     # 정방향 크롤링
                     crawl_flights(departure, arrival, is_domestic)
                     time.sleep(150) # 180일 수집 후 150초 휴식
-                    # 역방향 크롤링
-                    crawl_flights(arrival, departure, is_domestic)
-                    time.sleep(150) # 180일 수집 후 150초 휴식
+                    
+                    if not is_domestic:
+                        # 역방향 크롤링
+                        crawl_flights(arrival, departure, is_domestic)
+                        time.sleep(150) # 180일 수집 후 150초 휴식
+
         logger.info('\n\n크롤링 완료!!!!')
         batch_queue.flush_total_queues() # 큐에 남아있는 모든 데이터 마지막으로 삽입
         db.close()
+
     except Exception as e:
-        logger.info('\n\n 오류로 인한 프로그램 종료')
-        logger.info(f'{e}')
+        logger.error('\n\n오류로 인한 프로그램 종료')
+        logger.error('상세 오류 정보:')
+        logger.error(traceback.format_exc())  # 이 줄이 상세한 오류 정보를 로그에 기록합니다.
+        batch_queue.flush_total_queues()
+        db.close()
