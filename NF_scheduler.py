@@ -53,7 +53,7 @@ def crawl_flights(departure, arrival, is_domestic):
             # else:
                 # logger.info(f"{target_date}에 '{departure_name}'에서 '{arrival_name}'로 가는 노선 데이터 수집 완료")
         
-        random_sec = random.randint(3, 7)
+        random_sec = random.randint(1, 10)
         time.sleep(random_sec)
 
     end_time = time.time()

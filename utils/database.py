@@ -33,7 +33,7 @@ class DataBase:
         try:
             execute_values(self.cur, query, params_list)
             self.conn.commit()
-            self.logger.info(f"{len(params_list)}개의 레코드가 성공적으로 삽입되었습니다.")
+            # self.logger.info(f"{len(params_list)}개의 레코드가 성공적으로 삽입되었습니다.")
             return True
         except Exception as e:
             self.logger.error(f"배치 쿼리 실행 오류: {e}")
