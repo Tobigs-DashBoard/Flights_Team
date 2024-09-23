@@ -15,8 +15,13 @@ def send_request(payload, headers):
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        logger.info(f"API 요청 오류 {e}")
-        print(f"API 요청 오류 {e}")
+        error_message = f"API 요청 오류: {str(e)}"
+        if hasattr(e, 'response'):
+            logger.error(f"Status Code: {e.response.status_code}")
+            logger.error(f"Response Text: {e.response.text}")
+        else:
+            logger.error("이유 모를 에러!!!")
+        print(error_message)
         return False
 
 def return_time_stamp(time):
