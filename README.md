@@ -23,15 +23,12 @@ erDiagram
         timestamp depart_timestamp 
         timestamp arrival_timestamp 
         integer journey_time
-        date fetched_date PK
-        timestamp inserted_at
     }
     LAYOVER_INFO {
         varchar air_id PK, FK
         varchar segment_id PK
         integer layover_order
         integer connect_time
-        date fetched_date PK, FK
     }
     FARE_INFO {
         varchar air_id PK, FK
@@ -39,7 +36,6 @@ erDiagram
         varchar agt_code PK
         integer adult_fare
         date fetched_date PK, FK
-        text purchase_url
     }
 ```
 
@@ -65,8 +61,6 @@ erDiagram
 | depart_timestamp | timestamp | 출발 시간 | 2024-09-27 18:27:00 |
 | arrival_timestamp | timestamp | 도착 시간 | 2024-09-27 19:30:00 |
 | journey_time | integer | 비행 시간 (분) | 63 |
-| fetched_date | date | 수집 날짜 (PK) | 2024-08-20 |
-| inserted_at | timestamp | DB에 삽입된 시간 | 2024-08-20 04:16:16.307186+09 |
 
 ### FARE_INFO 테이블
 
@@ -76,8 +70,7 @@ erDiagram
 | option_type | varchar(50) | 구매 유형 (PK) | 일반석/할인석/비즈니스석 |
 | agt_code | varchar(50) | 여행사 코드 (PK) | INT005 |
 | adult_fare | integer | 성인 요금 | 210800 |
-| fetched_date | date | 수집 날짜 (PK, FK) | 2024-08-20 |
-| purchase_url | text | 결제 페이지 URL | https://... |
+| fetched_date | date | 수집 날짜 (PK) | 2024-08-20 |
 
 ### LAYOVER_INFO 테이블
 
@@ -115,9 +108,7 @@ CREATE TABLE flight_info (
     depart_timestamp TIMESTAMP,
     arrival_timestamp TIMESTAMP,
     journey_time INTEGER,
-    fetched_date DATE NOT NULL,
-    inserted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (air_id, fetched_date),
+    PRIMARY KEY (air_id),
     FOREIGN KEY (depart_airport) REFERENCES airport_info(airport_code),
     FOREIGN KEY (arrival_airport) REFERENCES airport_info(airport_code)
 );
@@ -141,7 +132,7 @@ CREATE TABLE layover_info (
     layover_order INTEGER,
     connect_time INTEGER,
     fetched_date DATE NOT NULL,
-    PRIMARY KEY (air_id, segment_id, fetched_date),
-    FOREIGN KEY (air_id, fetched_date) REFERENCES flight_info(air_id, fetched_date)
+    PRIMARY KEY (air_id, segment_id),
+    FOREIGN KEY (air_id) REFERENCES flight_info(air_id)
 );
 ```
