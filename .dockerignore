@@ -1,0 +1,4 @@
+*.ipynb
+test_files/*
+__pycache__/*
+logs/*

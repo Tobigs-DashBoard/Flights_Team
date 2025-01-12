@@ -1,18 +1,19 @@
 # import json
 import time
 from config.api_params import  return_header, international_payload_form
-from utils.fetch_process_functions import convert_to_timestamp, convert_to_utc, send_request, decode_url_text
-from NF_global_objects import get_batch_queue, get_today, get_logger
+from utils.fetch_process_functions import convert_to_timestamp, convert_to_utc, decode_url_text
+from utils.multi_request import send_request_with_proxy, origin_send_request
+from NF_global_objects import get_batch_queue, get_today, get_logger, get_progress, get_total_combi_length, update_progress, get_airport_map
 
 logger=get_logger()
 batch_queue=get_batch_queue()
 today=get_today()
+airport_map=get_airport_map()
 
 
 def save_flight_info(schedules, airline_map):
     '''비행 정보 저장'''
     fetched_date=today.strftime('%Y%m%d')
-    inserted_air_id_list=[]
     for schedule in schedules[0].values():
         details = schedule['detail']
         total_journey_time = int(schedule['journeyTime'][0])*60 + int(schedule['journeyTime'][1])
@@ -48,11 +49,11 @@ def save_flight_info(schedules, airline_map):
                     layover_depart_airport, layover_depart_timestamp,
                     layover_arrival_airport, layover_arrival_timestamp,
                     total_journey_time,
-                    fetched_date
+                    is_layover
                 )
-            if air_id not in inserted_air_id_list:
-                inserted_air_id_list.append(air_id)
-                batch_queue.add_to_queue('flight_info', insert_data_to_flight_info)
+        
+            
+            batch_queue.add_to_queue('flight_info', insert_data_to_flight_info)
 
             # 각각의 항공권 정보
             for index, detail in enumerate(details):
@@ -65,21 +66,28 @@ def save_flight_info(schedules, airline_map):
                 journey_time = int(detail['jt'][:2])*60 + int(detail['jt'][2:])
                 connect_time=int(detail['ct'][:2])*60 + int(detail['ct'][2:])
                 
+                if depart_airport not in airport_map.keys() and arrival_airport not in airport_map.keys(): # 기본 공항외의 공항을 경유할 경우 처리하지 않음
+                    warn_text=""
+                    if depart_airport not in airport_map:
+                        warn_text+=f"{depart_airport}는 규격외의 공합입니다."
+                    if arrival_airport not in airport_map:
+                        warn_text+=f"\n{arrival_airport}는 규격외의 공합입니다."
+                    logger.warning(warn_text)
+                    continue
                 # flight_info 테이블에 삽입
                 insert_data_to_flight_info=(
-                    air_id_list[index], airline_map.get(detail['av']), 
+                    air_id_list[index], 
+                    airline_map.get(detail['av']), 
                     depart_airport, depart_timestamp,
                     arrival_airport, arrival_timestamp,
                     journey_time,
-                    fetched_date
+                    False
                 )
-                if air_id_list[index] not in inserted_air_id_list:
-                    inserted_air_id_list.append(air_id_list[index])
-                    batch_queue.add_to_queue('flight_info', insert_data_to_flight_info)
-
+                
+                batch_queue.add_to_queue('flight_info', insert_data_to_flight_info)
                 # layover_info 테이블에 경유 항공권내의 편도 항공권 id, connect_time 정보 삽입
                 insert_data_to_layover_info=(
-                    air_id, air_id_list[index], index, connect_time, fetched_date
+                    air_id, air_id_list[index], index, connect_time
                 )
                 batch_queue.add_to_queue('layover_info', insert_data_to_layover_info)
             
@@ -98,15 +106,18 @@ def save_flight_info(schedules, airline_map):
                     depart_airport, depart_timestamp,
                     arrival_airport, arrival_timestamp,
                     journey_time,
-                    fetched_date
+                    False
                 )
-            if air_id not in inserted_air_id_list:
-                inserted_air_id_list.append(air_id)
-                batch_queue.add_to_queue('flight_info', insert_data_to_flight_info)
+            
+            batch_queue.add_to_queue('flight_info', insert_data_to_flight_info)
     return True
 
-def save_fare_info(fares, fare_types):
+def save_fare_info(fares, fare_types, seat_class):
     '''운임 정보 저장'''
+    seat_class_map={'Y':'일반석',
+                    'P': '이코노미',
+                    'C': '비즈니스석',
+                    'F': '일등석'}
     fetched_date=today.strftime('%Y%m%d')
     for key, values in fares.items():
         for option, fare_list in values['fare'].items():
@@ -141,7 +152,7 @@ def save_fare_info(fares, fare_types):
                     purchase_url = fare['ReserveParameter']['#cdata-section']
                     if infant_fare > 0:
                         continue
-                    insert_data_to_fare_info=(key, option, agt, adult_fare, purchase_url, fetched_date)
+                    insert_data_to_fare_info=(key, seat_class_map[seat_class], agt, adult_fare, fetched_date)
                     batch_queue.add_to_queue('fare_info', insert_data_to_fare_info)
                 except Exception as e:
                     logger.info(f"운임 정보 처리 중 오류: {e}")
@@ -149,50 +160,25 @@ def save_fare_info(fares, fare_types):
                     continue
     return True
 
-def fetch_international_flights(departure, arrival, date, cnt):
-    # logger.info("외국 항공권입니다.")
-    headers = return_header(departure, arrival, date)
-    
-    # 첫 번째 요청
-    payload1 = international_payload_form(first=True, departure=departure, arrival=arrival, date=date)
-    response_data1 = send_request(payload1, headers)
-    
-    # TODO 요청오류났을때 어떻게 처리할지
-    if not response_data1:
-        cnt+=2
-        return cnt
-    
-    international_list = response_data1.get("data", {}).get("internationalList", {})
-    galileo_key = international_list.get("galileoKey")
-    travel_biz_key = international_list.get("travelBizKey")
-    
-    time.sleep(5)
-
-    # 두 번째 요청
-    payload2 = international_payload_form(first=False, departure=departure, arrival=arrival, date=date, galileo_key=galileo_key, travel_biz_key=travel_biz_key)
-    response_data2 = send_request(payload2, headers)
-    if not response_data2:
-        cnt+=2
-        return cnt
-
-    international_list = response_data2.get("data", {}).get("internationalList", {})
+def fetch_international_flights(response, flight_text, seat_class):
+    # with open('flight_data.json', 'w', encoding='utf-8') as f:
+    #     json.dump(response, f, ensure_ascii=False, indent=4)
+    start=time.time()
+    international_list = response.get("data", {}).get("internationalList", {})
     results = international_list.get("results", {})
-        
+    
     airline_map = results.get('airlines', {})
     # airport_map = results.get('airports', {})
     schedules = results.get("schedules", [])
     fares = results.get("fares", [])
     fare_types = results.get("fareTypes", [])
     
-    if len(schedules) == 0:
-        # logger.info(f"{airport_map[departure]['name']}에서 {airport_map[arrival]['name']}로 가는 항공권이 없습니다. {date}")
-        cnt+=1
-        return cnt
-    # 항공편이 있으면 체크개수 초기화
-    else:
-        cnt=0
-    
     next_flag=save_flight_info(schedules=schedules, airline_map=airline_map)
-    next_flag=save_fare_info(fares=fares, fare_types=fare_types)
-    
-    return cnt
+    next_flag=save_fare_info(fares=fares, fare_types=fare_types, seat_class=seat_class)
+    end=time.time()
+    update_progress()
+    progress=get_progress()
+    total_combi_length=get_total_combi_length()
+    progress_ratio = progress / total_combi_length * 100
+    logger.info(f"{flight_text}\n처리된 항공권 일정 비율 : {progress}/{total_combi_length}\n소요 시간 : {round(end-start, 2)}초") 
+    return 0

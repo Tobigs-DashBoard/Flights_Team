@@ -1,0 +1,10 @@
+*.DS_Store
+*.pyc
+*.csv
+/Naver_Results/*
+/Sky_Results/*
+/airport_csv/*
+sky_test_origin.json
+test_2.json
+*.ipynb
+*.json

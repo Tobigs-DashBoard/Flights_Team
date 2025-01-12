@@ -1,4 +1,3 @@
-import requests
 from datetime import datetime, timezone
 import urllib.parse
 import os
@@ -6,23 +5,6 @@ from pytz import timezone as py_timezone
 from NF_global_objects import get_logger, get_airport_map
 logger=get_logger()
 airport_map=get_airport_map()
-
-'''네이버 API 서버에 request를 보냄'''
-def send_request(payload, headers):
-    url = "https://airline-api.naver.com/graphql"
-    try:
-        response = requests.post(url, json=payload, headers=headers)
-        response.raise_for_status()
-        return response.json()
-    except Exception as e:
-        error_message = f"API 요청 오류: {str(e)}"
-        if hasattr(e, 'response'):
-            logger.error(f"Status Code: {e.response.status_code}")
-            logger.error(f"Response Text: {e.response.text}")
-        else:
-            logger.error("이유 모를 에러!!!")
-        print(error_message)
-        return False
 
 def return_time_stamp(time):
     date = time[:-4]

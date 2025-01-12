@@ -1,5 +1,5 @@
 '''api 요청 페이로드 형식'''
-def international_payload_form(first, departure, arrival, date, galileo_key="", travel_biz_key=""):
+def international_payload_form(first, departure, arrival, date, fare_type, galileo_key="", travel_biz_key=""):
     if first:
         galileo_flag=True
         galileo_key=""
@@ -20,6 +20,7 @@ def international_payload_form(first, departure, arrival, date, galileo_key="", 
                 "galileoFlag": galileo_flag,
                 "galileoKey": galileo_key, # 인증키
                 "infant": 0,
+                "fareType":fare_type,
                 "isDirect": False, # 직항 여부
                 "itinerary": [
                     {
@@ -34,37 +35,16 @@ def international_payload_form(first, departure, arrival, date, galileo_key="", 
                 "where": "pc",
                 "trip": "OW",
             },
-            "query": """
-            query getInternationalList($trip: InternationalList_TripType!, $itinerary: [InternationalList_itinerary]!, $adult: Int = 1, $child: Int = 0, $infant: Int = 0, $fareType: InternationalList_CabinClass!, $where: InternationalList_DeviceType = pc, $isDirect: Boolean = false, $stayLength: String, $galileoKey: String, $galileoFlag: Boolean = true, $travelBizKey: String, $travelBizFlag: Boolean = true) {
-            internationalList(
-                input: {trip: $trip, itinerary: $itinerary, person: {adult: $adult, child: $child, infant: $infant}, fareType: $fareType, where: $where, isDirect: $isDirect, stayLength: $stayLength, galileoKey: $galileoKey, galileoFlag: $galileoFlag, travelBizKey: $travelBizKey, travelBizFlag: $travelBizFlag}
-            ) {
-                galileoKey
-                galileoFlag
-                travelBizKey
-                travelBizFlag
-                totalResCnt
-                resCnt
-                results {
-                airlines
-                airports
-                fareTypes
-                schedules
-                fares
-                errors
-                }
-            }
-            }
-            """
+            "query": "query getInternationalList($trip: InternationalList_TripType!, $itinerary: [InternationalList_itinerary]!, $adult: Int = 1, $child: Int = 0, $infant: Int = 0, $fareType: InternationalList_CabinClass!, $where: InternationalList_DeviceType = pc, $isDirect: Boolean = false, $stayLength: String, $galileoKey: String, $galileoFlag: Boolean = true, $travelBizKey: String, $travelBizFlag: Boolean = true) {\n  internationalList(\n    input: {trip: $trip, itinerary: $itinerary, person: {adult: $adult, child: $child, infant: $infant}, fareType: $fareType, where: $where, isDirect: $isDirect, stayLength: $stayLength, galileoKey: $galileoKey, galileoFlag: $galileoFlag, travelBizKey: $travelBizKey, travelBizFlag: $travelBizFlag}\n  ) {\n    galileoKey\n    galileoFlag\n    travelBizKey\n    travelBizFlag\n    totalResCnt\n    resCnt\n    results {\n      airlines\n      airports\n      fareTypes\n      schedules\n      fares\n      errors\n      carbonEmissionAverage {\n        directFlightCarbonEmissionItineraryAverage\n        directFlightCarbonEmissionAverage\n      }\n    }\n  }\n}"
         }
     return payload
 
-def domastic_payload_form(departure, arrival, date):
+def domastic_payload_form(departure, arrival, date, fare_type):
     payload={
             "operationName": "domesticFlights",
             "variables": {
                 "device":"PC",
-                "fareType":"YC",
+                "fareType":fare_type,
                 "itinerary": [
                     {
                         "departureAirport": departure,
@@ -216,7 +196,12 @@ def domastic_payload_form(departure, arrival, date):
     
     return payload
 
-def return_header(departure, arrival, date):
+def return_header(is_domestic, departure, arrival, date, seat_class):
+    if is_domestic:
+        referer=f"https://flight.naver.com/flights/domestic/{departure}-{arrival}-{date}?adult=1&child=0&infant=0&isDirect=true&fareType={seat_class}"
+    else:
+        referer=f"https://flight.naver.com/flights/international/{departure}-{arrival}-{date}?adult=1&fareType={seat_class}"
+
     headers = {
         "authority": "airline-api.naver.com",
         "method": "POST",
@@ -230,7 +215,7 @@ def return_header(departure, arrival, date):
         "origin": "https://flight.naver.com",
         "pragma": "no-cache",
         "priority": "u=1, i",
-        "referer": f"https://flight.naver.com/flights/international/{departure}-{arrival}-{date}?adult=1&isDirect=true&fareType=Y",
+        "referer": referer,
         "sec-ch-ua": '"Not)A;Brand";v="99", "Google Chrome";v="127", "Chromium";v="127"',
         "sec-ch-ua-mobile": "?0",
         "sec-ch-ua-platform": '"macOS"',
