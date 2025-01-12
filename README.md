@@ -122,7 +122,6 @@ CREATE TABLE fare_info (
     fetched_date DATE NOT NULL,
     purchase_url TEXT,
     PRIMARY KEY (air_id, option_type, agt_code, fetched_date),
-    FOREIGN KEY (air_id, fetched_date) REFERENCES flight_info(air_id, fetched_date)
 );
 
 -- layover_info 테이블 생성
