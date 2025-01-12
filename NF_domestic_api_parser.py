@@ -1,33 +1,18 @@
-from config.api_params import domastic_payload_form, return_header
-from utils.fetch_process_functions import convert_to_timestamp, convert_to_utc, send_request
-from NF_global_objects import get_today, get_batch_queue
-import json
+from utils.fetch_process_functions import convert_to_timestamp, convert_to_utc
+from NF_global_objects import get_today, get_batch_queue, get_logger, get_progress, get_total_combi_length, update_progress
+import time
 today=get_today()
 batch_queue=get_batch_queue()
+logger=get_logger()
 
-def fetch_domestic_flights(departure, arrival, date, cnt):
-    # logger.info("국내 항공권 입니다.")
-    headers = return_header(departure, arrival, date)
-    # 첫 번째 요청
-    payload1 = domastic_payload_form(departure=departure, arrival=arrival, date=date)
-    response_data1 = send_request(payload1, headers)
 
-    schedules=response_data1['data']['domesticFlights']['departures']
-    if not response_data1:
-        cnt+=2
-        return cnt
-    
-    if len(schedules) == 0:
-        # logger.info(f"{airport_map[departure]['name']}에서 {airport_map[arrival]['name']}로 가는 항공권이 없습니다. {date}")
-        cnt+=1
-        return cnt
-    else:
-        cnt=0 # 항공편이 있으면 예외처리 카운터 초기화
-
+def fetch_domestic_flights(response, flight_text):
+    start=time.time()
+    schedules=response['data']['domesticFlights']['departures']
     for air in schedules:
         seat_class=air['seatClass'] # 좌석 등급
         seat_cnt=air['seatCnt'] # 잔여 좌석수 # TODO 해외 항공권이랑 비교 필요
-        air_id=air['departureDate']+air['depCity']+air['arrCity']+air['airlineCode']+air['fitName']+seat_class
+        air_id=air['departureDate']+air['depCity']+air['arrCity']+air['airlineCode']+air['fitName']+air['seatClass']
         fetched_date=today.strftime('%Y%m%d')
 
         # 항공권 정보 삽입
@@ -57,10 +42,9 @@ def fetch_domestic_flights(departure, arrival, date, cnt):
                 depart_airport, depart_timestamp,
                 arrival_airport, arrival_timestamp,
                 journey_time,
-                fetched_date
+                False
             )
         batch_queue.add_to_queue('flight_info', insert_data_to_flight_info) # 배치큐에 삽입
-
         for agt_option in air['fare']:
             discountFare = agt_option['discountFare'] or 0
             publish_fee=agt_option['publishFee']
@@ -78,7 +62,12 @@ def fetch_domestic_flights(departure, arrival, date, cnt):
             # discountFare= discountFare,
             child_fare=None
             purchase_url=None
-            insert_data_to_fare_info=(air_id, option_type, agt_code, adult_fare, purchase_url, fetched_date)
+            insert_data_to_fare_info=(air_id, option_type, agt_code, adult_fare, fetched_date)
             batch_queue.add_to_queue('fare_info', insert_data_to_fare_info)
-
-    return cnt
+    update_progress()
+    progress=get_progress()
+    total_combi_length=get_total_combi_length()
+    progress_ratio = progress / total_combi_length * 100
+    end=time.time()
+    logger.info(f"{flight_text}\n처리된 항공권 일정 비율 : {progress}/{total_combi_length}\n소요 시간 : {round(end-start, 2)}초")
+    return 0
