@@ -135,3 +135,11 @@ CREATE TABLE layover_info (
     FOREIGN KEY (air_id) REFERENCES flight_info(air_id)
 );
 ```
+## 인덱싱
+```sql
+-- 일별 출발 항공권 추출 최적화를 위한 인덱스 (fare_info)
+CREATE INDEX idx_depart_timestamp ON fare_info(depart_timestamp);
+
+-- 중간 집계 쿼리 최적화를 위한 인덱스 (fare_info)
+CREATE INDEX idx_fetched_date ON fare_info(fetched_date);
+```

@@ -1,0 +1,11 @@
+*.DS_Store
+*.pyc
+sky_test_origin.json
+test_2.json
+*.ipynb
+*.json
+*.sh
+Dockerfile
+.env
+gcp_key.json
+*.ipynb

@@ -2,8 +2,7 @@ from datetime import datetime, timezone
 import urllib.parse
 import os
 from pytz import timezone as py_timezone
-from NF_global_objects import get_logger, get_airport_map
-logger=get_logger()
+from NF_global_objects import get_airport_map
 airport_map=get_airport_map()
 
 def return_time_stamp(time):

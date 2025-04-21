@@ -1,0 +1,6 @@
+*.ipynb
+test_files/*
+__pycache__/*
+logs/*
+webshare_proxies.txt
+gcp_key.json
