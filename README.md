@@ -1,4 +1,7 @@
-# 항공권 DB
+# 1. 데이터 수집 파이프라인
+<img width="441" alt="Image" src="https://github.com/user-attachments/assets/fbfd3083-a6bf-4bd7-b68a-c838795c98ca" />
+
+# 2. 항공권 DB
 
 본 문서는 네이버 항공권 데이터베이스의 구조에 대한 문서입니다.
 
@@ -61,6 +64,7 @@ erDiagram
 | depart_timestamp | timestamp | 출발 시간 | 2024-09-27 18:27:00 |
 | arrival_timestamp | timestamp | 도착 시간 | 2024-09-27 19:30:00 |
 | journey_time | integer | 비행 시간 (분) | 63 |
+| is_layover | boolean | 경유여부 | True/False |
 
 ### FARE_INFO 테이블
 
@@ -71,6 +75,7 @@ erDiagram
 | agt_code | varchar(50) | 여행사 코드 (PK) | INT005 |
 | adult_fare | integer | 성인 요금 | 210800 |
 | fetched_date | date | 수집 날짜 (PK) | 2024-08-20 |
+| fare_class | character | 운임 클래스 | n, K, L ...|
 
 ### LAYOVER_INFO 테이블
 
@@ -80,7 +85,6 @@ erDiagram
 | segment_id | varchar(50) | 구간 ID (PK) | SEG001 |
 | layover_order | integer | 경유 순서 | 1 |
 | connect_time | integer | 연결 시간 (분) | 120 |
-| fetched_date | date | 수집 날짜 (PK, FK) | 2024-08-20 |
 
 ## 참고 사항
 - 공항 정보는 airport_info 테이블에서 공항 코드를 key로 찾을 수 있습니다.
@@ -90,56 +94,75 @@ erDiagram
 ## 테이블 생성 SQL 쿼리
 
 ```sql
--- airport_info 테이블 생성
+-- 1) airport_info
 CREATE TABLE airport_info (
-    airport_code VARCHAR(10) NOT NULL,
-    name VARCHAR(100),
-    country VARCHAR(100),
-    time_zone VARCHAR(100),
-    PRIMARY KEY (airport_code)
+  airport_code   VARCHAR(10)    NOT NULL,
+  name           VARCHAR(30),
+  country        VARCHAR(30),
+  time_zone      VARCHAR(20),
+  CONSTRAINT airport_info_pkey PRIMARY KEY (airport_code)
 );
 
--- flight_info 테이블 생성
+-- 2) flight_info
 CREATE TABLE flight_info (
-    air_id VARCHAR(100) NOT NULL,
-    airline VARCHAR(30),
-    depart_airport VARCHAR(10),
-    arrival_airport VARCHAR(10),
-    depart_timestamp TIMESTAMP,
-    arrival_timestamp TIMESTAMP,
-    journey_time INTEGER,
-    PRIMARY KEY (air_id),
-    FOREIGN KEY (depart_airport) REFERENCES airport_info(airport_code),
-    FOREIGN KEY (arrival_airport) REFERENCES airport_info(airport_code)
+  air_id            VARCHAR(100)  NOT NULL,
+  airline           VARCHAR(30),
+  depart_airport    VARCHAR(10),
+  arrival_airport   VARCHAR(10),
+  depart_timestamp  TIMESTAMPTZ,
+  arrival_timestamp TIMESTAMPTZ,
+  journey_time      INTEGER,
+  is_layover        BOOLEAN,
+  CONSTRAINT flight_info_pkey PRIMARY KEY (air_id),
+  CONSTRAINT flight_info_depart_airport_fkey FOREIGN KEY (depart_airport) REFERENCES airport_info(airport_code),
+  CONSTRAINT flight_info_arrival_airport_fkey FOREIGN KEY (arrival_airport) REFERENCES airport_info(airport_code)
 );
 
--- fare_info 테이블 생성
+-- 3) fare_info  
 CREATE TABLE fare_info (
-    air_id VARCHAR(100) NOT NULL,
-    option_type VARCHAR(50),
-    agt_code VARCHAR(50),
-    adult_fare INTEGER,
-    fetched_date DATE NOT NULL,
-    purchase_url TEXT,
-    PRIMARY KEY (air_id, option_type, agt_code, fetched_date),
+  air_id       VARCHAR(100)    NOT NULL,
+  seat_class   VARCHAR(50)     NOT NULL,
+  agt_code     VARCHAR(50)     NOT NULL,
+  adult_fare   INTEGER,
+  fetched_date DATE            NOT NULL,
+  fare_class   CHAR(1)         NOT NULL,
+  batch_id     BIGINT          NOT NULL,
+  CONSTRAINT fare_info_pkey PRIMARY KEY (air_id, fetched_date, seat_class, fare_class, agt_code),
+  CONSTRAINT fare_info_air_id_fkey FOREIGN KEY (air_id) REFERENCES flight_info(air_id) ON DELETE CASCADE
 );
 
--- layover_info 테이블 생성
+-- 4) temp_fare_info  
+CREATE TABLE temp_fare_info (
+  batch_id     BIGINT          NOT NULL,
+  air_id       VARCHAR(100)    NOT NULL,
+  seat_class   VARCHAR(50)     NOT NULL,
+  agt_code     VARCHAR(50)     NOT NULL,
+  adult_fare   INTEGER,
+  fetched_date DATE            NOT NULL,
+  fare_class   CHAR(1)         NOT NULL,
+  CONSTRAINT fare_info_pkey PRIMARY KEY (air_id, fetched_date, seat_class, fare_class, agt_code),
+  CONSTRAINT fare_info_air_id_fkey FOREIGN KEY (air_id) REFERENCES flight_info(air_id) ON DELETE CASCADE
+);
+
+-- 4) layover_info
 CREATE TABLE layover_info (
-    air_id VARCHAR(100) NOT NULL,
-    segment_id VARCHAR(50) NOT NULL,
-    layover_order INTEGER,
-    connect_time INTEGER,
-    fetched_date DATE NOT NULL,
-    PRIMARY KEY (air_id, segment_id),
-    FOREIGN KEY (air_id) REFERENCES flight_info(air_id)
+  air_id        VARCHAR(100)  NOT NULL,
+  segment_id    VARCHAR(50)   NOT NULL,
+  layover_order INTEGER       NOT NULL,
+  connect_time  INTEGER,
+  CONSTRAINT layover_info_pkey PRIMARY KEY (air_id, segment_id, layover_order),
+  CONSTRAINT layover_info_air_id_fkey FOREIGN KEY (air_id)
+    REFERENCES flight_info(air_id) ON DELETE CASCADE
 );
 ```
 ## 인덱싱
 ```sql
--- 일별 출발 항공권 추출 최적화를 위한 인덱스 (fare_info)
-CREATE INDEX idx_depart_timestamp ON fare_info(depart_timestamp);
-
--- 중간 집계 쿼리 최적화를 위한 인덱스 (fare_info)
-CREATE INDEX idx_fetched_date ON fare_info(fetched_date);
+-- 배치 ID용 시퀀스 (이미 있다면 생략 가능)
+CREATE SEQUENCE IF NOT EXISTS before_fare_info_batch_id_seq;
+-- 비행편 출발/도착 공항 조합 조회 인덱스
+CREATE INDEX idx_airports_flight_info ON flight_info (depart_airport, arrival_airport);
+-- 배치 ID 및 수집일 인덱스
+CREATE INDEX idx_before_fare_info_batch_id ON fare_info (batch_id);
+CREATE INDEX idx_before_fare_info_batch_id ON temp_fare_info (batch_id);
+CREATE INDEX idx_fare_info_fetched_date ON fare_info (fetched_date);
 ```
