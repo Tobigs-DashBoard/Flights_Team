@@ -2,7 +2,6 @@ import psycopg2
 from psycopg2.extras import execute_values
 import traceback
 import time
-from psycopg2 import errors
 
 # 데이터베이스 클래스 (DB 연결, insert, 연결 종료 메소드)
 class DataBase:
