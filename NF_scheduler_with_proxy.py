@@ -156,7 +156,7 @@ class CrawlerManager:
                     continue
         else:
             finish_schedule_processing(schedule, success=False)
-            requeue_proxy(proxy=proxy) if response=='retry' else remove_from_processing(proxy=proxy)
+            requeue_proxy(proxy=proxy) # if response=='retry' else remove_from_processing(proxy=proxy)
 
 
     def _process_international_flight(self, thread_id, schedule, proxy, process_start, 
@@ -202,10 +202,10 @@ class CrawlerManager:
                         continue
             else:
                 finish_schedule_processing(schedule, success=False)
-                requeue_proxy(proxy=proxy) if response=='retry' else remove_from_processing(proxy=proxy)
+                requeue_proxy(proxy=proxy) # if response=='retry' else remove_from_processing(proxy=proxy)
         else:
             finish_schedule_processing(schedule, success=False)
-            requeue_proxy(proxy=proxy) if response=='retry' else remove_from_processing(proxy=proxy)
+            requeue_proxy(proxy=proxy) # if response=='retry' else remove_from_processing(proxy=proxy)
 
     def process_responses(self, worker_threads):
         """응답 처리 스레드 함수"""
